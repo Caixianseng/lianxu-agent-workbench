@@ -1,0 +1,15 @@
+{
+  "name": "agent-workbench",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Local multi-agent orchestration with human model selection and lead review",
+  "engines": { "node": ">=20.18" },
+  "scripts": {
+    "start": "node src/server.mjs",
+    "dev": "node --watch src/server.mjs",
+    "test": "node --test",
+    "setup:qoder": "npm install --prefix data/runtime/qoder --ignore-scripts --no-audit --no-fund --cache data/npm-cache @qoder-ai/qodercli@1.1.77",
+    "login:qoder": "node data/runtime/qoder/node_modules/@qoder-ai/qodercli/bundle/qodercli.js login"
+  }
+}

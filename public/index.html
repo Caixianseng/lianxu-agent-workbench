@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f5f4f0">
+  <title>联序 · 多 Agent 协作台</title>
+  <link rel="stylesheet" href="/styles.css">
+  <script src="/app.js" defer></script>
+</head>
+<body>
+  <aside class="sidebar">
+    <a class="brand" href="/" aria-label="联序首页"><span class="brand-mark">联</span><span>联序<small>AGENT WORKBENCH</small></span></a>
+    <div class="nav-label">工作空间</div>
+    <nav aria-label="主导航"><button class="nav-item active" data-view="workbench"><span class="nav-symbol">◫</span>协作工作台<span class="nav-arrow">↗</span></button><button class="nav-item" data-view="agents"><span class="nav-symbol">♧</span>Agent 管理<span id="nav-agent-count" class="nav-count">0</span></button></nav>
+    <div class="sidebar-note"><span class="small-overline">HUMAN IN THE LOOP</span><h3>你的目标，<br>一支协作的队伍。</h3><p>主导拆解与复核，<br>由你决定谁来执行。</p><div class="mini-orbit"><span>◎</span><i></i><span>◇</span><i></i><span>✓</span></div></div>
+    <div class="runtime"><span class="status-dot" id="connection-dot"></span><div id="connection-label">正在连接本地服务<small>LOCAL WORKSPACE</small></div></div>
+  </aside>
+  <main class="main">
+    <header class="topbar"><div class="breadcrumb">工作空间 <span>/</span> <strong id="page-title">协作工作台</strong></div><span class="local-pill"><span class="status-dot"></span>本机运行</span></header>
+    <section id="view-workbench" class="view">
+      <div class="page-heading"><div><div class="eyebrow">ORCHESTRATE WITH INTENTION</div><h1>让每份算力，各尽所长<span>。</span></h1><p>交给主导 Agent 规划，让合适的模型执行，让每项产出经过复核。</p></div><button id="new-run-button" class="button button-outline">＋ 新建协作</button></div>
+      <div class="workspace-grid">
+        <section class="project-column">
+          <div id="run-tabs" class="run-tabs" aria-label="项目历史"></div>
+          <section class="panel chat-panel" id="chat-panel" aria-labelledby="chat-title">
+            <div class="chat-heading"><div class="chat-lead-icon" aria-hidden="true">✧</div><div><span class="eyebrow">TALK TO YOUR LEAD</span><h2 id="chat-title">与主导对话</h2><p id="chat-lead-label">选择主导 Agent，开始一次协作。</p></div><span class="chat-state" id="chat-state">新对话</span></div>
+            <div id="chat-messages" class="chat-messages" role="log" aria-label="协作对话记录" aria-live="polite" aria-relevant="additions text"></div>
+            <form id="chat-form" class="chat-composer">
+              <div class="chat-mentions-heading"><span>指定执行 Agent</span><span>点击插入 @ 名称</span></div>
+              <div id="chat-agent-chips" class="chat-agent-chips" aria-label="插入 Agent 名称"></div>
+              <label for="chat-message" id="chat-input-label">告诉主导你的目标与分工要求</label>
+              <textarea id="chat-message" name="message" rows="3" required maxlength="12000" aria-describedby="chat-help chat-error" placeholder="例如：比较两种方案，计算交给 @OpenCode CLI，整理交给 @Qoder CLI，最后由主导复核。"></textarea>
+              <p id="chat-error" class="inline-error" role="alert" hidden></p>
+              <div class="chat-composer-footer"><p id="chat-help">Enter 发送 · Shift + Enter 换行<br>先规划，确认分工后再执行。</p><button type="submit" id="chat-send" class="button button-primary"><span>发送并规划</span><span aria-hidden="true">↑</span></button></div>
+            </form>
+          </section>
+          <div id="run-content"></div>
+        </section>
+        <aside class="config-column">
+          <section class="panel launch-panel" id="launch-panel">
+            <div class="panel-heading"><div><span class="eyebrow">PROJECT SETTINGS</span><h2>新协作设置</h2></div><span class="square-icon">↗</span></div>
+            <form id="run-form">
+              <div class="field-heading"><label for="lead-agent">主导 Agent</label><span class="field-hint">负责规划 · 难题 · 复核</span></div><select id="lead-agent" name="leadAgentId" required><option value="">正在加载 Agent…</option></select><p id="lead-description" class="field-help"></p>
+              <div class="form-row"><div><label for="max-calls">调用预算</label><div class="input-unit"><input id="max-calls" type="number" min="5" max="200" value="40" required><span>次</span></div></div><div><label for="concurrency">并行上限</label><select id="concurrency"><option value="1">1 个任务</option><option value="2" selected>2 个任务</option><option value="3">3 个任务</option><option value="4">4 个任务</option></select></div></div>
+              <label class="toggle-field" id="demo-failure-field"><span><strong>演示纠错过程</strong><small>模拟一次失误，观察复核与修正</small></span><input id="demo-failure" type="checkbox" role="switch"><span class="switch" aria-hidden="true"></span></label>
+              <p class="launch-footnote">在左侧聊天框发送目标即可开始。<br>这些设置用于新建协作。</p>
+            </form>
+          </section>
+          <section class="panel team-panel"><div class="section-title"><h2>可用队伍</h2><button class="text-button" data-view="agents">管理 ↗</button></div><div id="team-preview"></div><div class="team-note">任务按能力等级与技能匹配。高复杂度、高风险任务由主导处理。</div></section>
+          <div class="trust-note"><span>◇</span><p>复核与重试能降低错误风险，但不能保证模型结果绝对正确。最终交付仍需按实际用途验收。</p></div>
+        </aside>
+      </div>
+    </section>
+    <section id="view-agents" class="view" hidden><div class="page-heading"><div><div class="eyebrow">BUILD YOUR TEAM</div><h1>为不同任务，配齐能力<span>。</span></h1><p>统一管理 API 模型与本机 CLI，按能力与技能组合你的团队。</p></div><button id="add-agent-button" class="button button-primary">＋ 添加 Agent</button></div><div id="agent-stats" class="agent-stats"></div><div id="agent-grid" class="agent-grid"></div><section class="integration-note"><h3>接入真实模型</h3><p>API 使用 OpenAI 兼容接口，密钥以服务进程的环境变量读取；本机 CLI 可从文件选择 Agent 程序，加载模型后直接添加，也可使用已有配置。演示 Agent 只生成模拟结果，演示与真实模型分别组队。</p></section></section>
+    <footer class="page-footer"><span>联序 · 本地多 Agent 工作空间</span><span>规划 → 分工 → 执行 → 复核</span></footer>
+  </main>
+  <dialog id="agent-dialog"><form id="agent-form">
+    <div class="dialog-heading"><div><div class="eyebrow">ADD TO YOUR TEAM</div><h2>添加 Agent</h2></div><button type="button" id="close-agent-dialog" class="icon-button" aria-label="关闭">×</button></div>
+    <div class="form-row"><div><label for="agent-name">名称</label><input id="agent-name" required maxlength="80" placeholder="例如：架构负责人"></div><div><label for="agent-provider">接入方式</label><select id="agent-provider"><option value="openai-compatible">API · OpenAI 兼容</option><option value="cli">本机 CLI</option><option value="demo">演示 Agent</option></select></div></div>
+    <div id="cli-agent-fields" hidden>
+      <div class="cli-file-box"><div><strong>选择本机 Agent 程序</strong><p>在 Windows 系统文件窗口中选择程序，自动读取模型。</p></div><div class="cli-picker-actions"><button type="button" id="pick-cli-file" class="button button-outline">选择本地文件…</button><button type="button" id="cancel-cli-discovery" class="text-button" hidden>取消选择</button></div><p id="cli-selected-path" class="cli-selected-path" hidden></p><p id="cli-discovery-status" class="field-help" role="status" aria-live="polite">选择程序后，将在下方显示模型列表。</p></div>
+      <details id="cli-existing-options" class="cli-existing-options"><summary>或使用已有 CLI 配置</summary><label for="agent-cli-profile">已有 Agent 程序</label><select id="agent-cli-profile"><option value="">请选择已有配置</option></select><p id="cli-profile-help" class="field-help"></p></details>
+      <label for="agent-cli-model">选择模型</label><select id="agent-cli-model" disabled><option value="">请先选择 Agent 程序</option></select><p id="cli-model-description" class="field-help"></p><p id="cli-discovery-warnings" class="field-help cli-warnings" hidden></p>
+    </div>
+    <div id="model-tier-row" class="form-row"><div id="manual-model-field"><label for="agent-model">模型名称</label><input id="agent-model" required maxlength="120" placeholder="服务支持的模型 ID"></div><div><label for="agent-tier">能力等级</label><select id="agent-tier"><option value="3">L3 · 高阶推理</option><option value="2">L2 · 均衡能力</option><option value="1">L1 · 轻量任务</option></select></div></div>
+    <label for="agent-skills">技能标签</label><input id="agent-skills" required value="general, coding, analysis, writing, testing" placeholder="多个技能用英文逗号分隔"><p class="field-help">与任务所需技能匹配；* 表示支持全部技能。能力等级由你标注，不等于质量保证。</p>
+    <div id="api-agent-fields"><label for="agent-url">API Base URL</label><input id="agent-url" type="url" placeholder="https://api.example.com/v1"><label for="agent-key-env">密钥环境变量名</label><input id="agent-key-env" placeholder="例如：MODEL_API_KEY" pattern="[A-Za-z_][A-Za-z0-9_]*"><p class="field-help">填写变量名，不要填写密钥；本地无密钥 API 可留空。请在启动服务前设置环境变量。</p></div>
+    <p id="agent-form-error" class="inline-error" role="alert"></p><div class="dialog-actions"><button type="button" id="cancel-agent-dialog" class="button button-outline">取消</button><button type="submit" id="save-agent" class="button button-primary">添加到队伍 →</button></div>
+  </form></dialog>
+  <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+</body>
+</html>

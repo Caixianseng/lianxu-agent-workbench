@@ -1,0 +1,43 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { createApp } from '../src/server.mjs';
+import { Store } from '../src/store.mjs';
+
+test('chat HTTP roundtrip changes a pending suggestion, persists conversation and requires explicit approval', async t => {
+  const calls = [];
+  const provider = async (_agent, request) => {
+    calls.push(request.phase);
+    if (request.phase === 'plan') return { data: { reply: '已按要求整理计划。', tasks: [{ id: 'task-a', title: '写摘要', description: '整理三句话的摘要', complexity: 1, risk: 'low', requiredSkills: ['writing'], dependencies: [], acceptance: ['包含三句话'], preferredAgentId: 'demo-builder' }] } };
+    if (request.phase === 'route') return { data: { reply: '摘要改由轻量模型处理，请确认。', assignments: [{ taskId: 'task-a', agentId: 'demo-light' }] } };
+    throw new Error('chat must not execute tasks');
+  };
+  const { server, engine } = createApp({ store: new Store(), provider, profiles: async () => [] });
+  await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
+  t.after(() => { server.closeAllConnections(); server.close(); });
+  const base = `http://127.0.0.1:${server.address().port}`;
+  const post = (path, data, headers = {}) => fetch(base + path, { method: 'POST', headers: { 'content-type': 'application/json', ...headers }, body: JSON.stringify(data) });
+  const response = await post('/api/runs', { goal: '写摘要交给 Nova', leadAgentId: 'demo-lead' });
+  assert.equal(response.status, 201);
+  const { id } = await response.json();
+  await engine.wait(id);
+  assert.equal(engine.getRun(id).tasks[0].suggestedAgentId, 'demo-builder');
+  assert.equal((await post(`/api/runs/${id}/chat`, { message: '更改分工' }, { origin: 'https://untrusted.example' })).status, 403);
+  assert.equal((await post(`/api/runs/${id}/chat`, { message: '' })).status, 400);
+  const sent = await post(`/api/runs/${id}/chat`, { message: 'T01 交给轻量模型' });
+  assert.equal(sent.status, 202);
+  await engine.wait(id);
+  const run = engine.getRun(id);
+  assert.equal(run.status, 'awaiting_approval');
+  assert.equal(run.chatBusy, false);
+  assert.equal(run.tasks[0].suggestedAgentId, 'demo-light');
+  assert.equal(run.tasks[0].agentId, undefined);
+  assert.ok(run.tasks[0].routingRevision > 0);
+  assert.deepEqual(calls, ['plan', 'route']);
+  assert.ok(run.messages.some(m => m.role === 'user' && m.content === 'T01 交给轻量模型'));
+  assert.ok(run.messages.some(m => m.role === 'assistant' && m.content.includes('请确认')));
+  const exported = await (await fetch(`${base}/api/runs/${id}/export`)).text();
+  assert.match(exported, /与主导的对话/);
+  assert.match(exported, /T01 交给轻量模型/);
+  assert.match(exported, /demo-fast/);
+  assert.equal((await post('/api/runs/missing/chat', { message: 'hello' })).status, 404);
+});

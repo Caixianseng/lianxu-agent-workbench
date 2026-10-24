@@ -1,0 +1,19 @@
+data/
+.env
+.env.*
+!.env.example
+config/cli-profiles.json
+node_modules/
+tmp/
+bin/
+
+# Local verification artifacts may include machine paths and run history.
+docs/real-smoke-*
+docs/*.png
+docs/*.jpg
+docs/*.jpeg
+docs/*.webp
+docs/chat-verification*
+.agents/
+.codex/
+.aws/

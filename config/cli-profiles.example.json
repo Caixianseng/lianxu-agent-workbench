@@ -1,0 +1,16 @@
+{
+  "_help": "Copy to config/cli-profiles.json and edit locally. This is trusted administrator configuration, never model-generated input. Profiles override built-ins by id. Prompt goes to stdin; {model} is the only argument placeholder. Use native .exe on Windows; .cmd/.bat/.ps1 are deliberately unsupported. For a JavaScript CLI use node.exe as command and an absolute JS entry point in args. Custom tools must be configured for text-only output and restricted capabilities by their operator. Never place API keys here; envAllowList contains variable names only.",
+  "profiles": [
+    {
+      "id": "custom-json-cli",
+      "name": "自定义本机 JSON CLI（配置后启用）",
+      "enabled": false,
+      "command": "C:\\path\\to\\node.exe",
+      "args": ["C:\\path\\to\\trusted-adapter.mjs", "--model", "{model}"],
+      "outputFormat": "json",
+      "models": ["replace-with-your-model-id"],
+      "timeoutMs": 120000,
+      "envAllowList": ["MY_MODEL_API_KEY"]
+    }
+  ]
+}
